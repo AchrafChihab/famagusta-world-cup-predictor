@@ -46,8 +46,6 @@ jobs:
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
           local_path: ./dist/*
-          remote_path: /public_html/
-          # Si le projet est dans un sous-dossier ex: /public_html/famagusta/
-          # change remote_path en conséquence
+          remote_path: /public_html/famagusta/
           sftp_only: true
           delete_remote_files: true # Nettoie les anciens fichiers avant deploy
