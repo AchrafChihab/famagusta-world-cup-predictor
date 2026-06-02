@@ -1,0 +1,6 @@
+{
+  "name": "Famagusta World Cup Predictor",
+  "description": "Formulaire de pronostics pour les matchs de la Coupe du Monde 2026 pour le café Famagusta, avec dashboard administrateur.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

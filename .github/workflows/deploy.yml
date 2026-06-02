@@ -1,0 +1,53 @@
+name: Deploy to PlanetHoster (famagusta.ashrafchihab.com)
+
+on:
+  push:
+    branches:
+      - main # Change to "master" si besoin
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout du code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Build Vite
+      - name: Build
+        run: npm run build
+        env:
+          # Ajoute ici tes variables Firebase si elles ne sont pas hardcodées
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+
+      # 5. Deploy via SFTP vers PlanetHoster
+      - name: Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: node182-eu.n0c.com
+          port: 5022
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: ./dist/*
+          remote_path: /public_html/
+          # Si le projet est dans un sous-dossier ex: /public_html/famagusta/
+          # change remote_path en conséquence
+          sftp_only: true
+          delete_remote_files: true # Nettoie les anciens fichiers avant deploy

@@ -1,0 +1,45 @@
+{
+  "entities": {
+    "Match": {
+      "title": "Match",
+      "description": "Represents a World Cup 2026 match",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "teamA": { "type": "string" },
+        "teamB": { "type": "string" },
+        "dateTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["open", "closed"] },
+        "scoreA": { "type": "number" },
+        "scoreB": { "type": "number" }
+      },
+      "required": ["id", "teamA", "teamB", "dateTime", "status"]
+    },
+    "Prediction": {
+      "title": "Prediction",
+      "description": "Represents a match score prediction from a customer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "phone": { "type": "string" },
+        "matchId": { "type": "string" },
+        "predictedScoreA": { "type": "number" },
+        "predictedScoreB": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "firstName", "lastName", "phone", "matchId", "predictedScoreA", "predictedScoreB", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/matches/{matchId}": {
+      "schema": "Match",
+      "description": "Collection of available and past matches"
+    },
+    "/predictions/{predictionId}": {
+      "schema": "Prediction",
+      "description": "Collection of user predictions with doc ID as matchId_phone"
+    }
+  }
+}

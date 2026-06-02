@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "achihab@digitalia.solutions" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation for Match
+    function isValidMatch(m) {
+      return m.keys().hasAll(['id', 'teamA', 'teamB', 'dateTime', 'status']) && (
+        m.id is string && m.id.size() <= 100 &&
+        m.teamA is string && m.teamA.size() <= 100 &&
+        m.teamB is string && m.teamB.size() <= 100 &&
+        m.dateTime is string && m.dateTime.size() <= 50 &&
+        m.status in ['open', 'closed'] &&
+        (!m.keys().contains('scoreA') || m.scoreA == null || m.scoreA is int) &&
+        (!m.keys().contains('scoreB') || m.scoreB == null || m.scoreB is int)
+      );
+    }
+
+    // Validation for Prediction
+    function isValidPrediction(p) {
+      return p.keys().hasAll(['id', 'firstName', 'lastName', 'phone', 'matchId', 'predictedScoreA', 'predictedScoreB', 'createdAt']) && (
+        p.id is string && p.id.size() <= 150 &&
+        p.firstName is string && p.firstName.size() >= 1 && p.firstName.size() <= 50 &&
+        p.lastName is string && p.lastName.size() >= 1 && p.lastName.size() <= 50 &&
+        p.phone is string && p.phone.size() >= 5 && p.phone.size() <= 20 &&
+        p.matchId is string && p.matchId.size() <= 100 &&
+        p.predictedScoreA is int && p.predictedScoreA >= 0 && p.predictedScoreA <= 99 &&
+        p.predictedScoreB is int && p.predictedScoreB >= 0 && p.predictedScoreB <= 99 &&
+        p.createdAt is timestamp &&
+        p.id == p.matchId + '_' + p.phone
+      );
+    }
+
+    // Rules for Admins Collection
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Rules for Matches
+    match /matches/{matchId} {
+      allow read: if true; // Publicly readable so customers can choose matches
+      allow create, update: if isAdmin() && isValidId(matchId) && isValidMatch(request.resource.data);
+      allow delete: if isAdmin() && isValidId(matchId);
+    }
+
+    // Rules for Predictions
+    match /predictions/{predictionId} {
+      // Admins can read (list & get) and manage all predictions.
+      // Customers can get (read single) predictions to check if they already voted (relying on matchId_phone document ID).
+      allow list: if isAdmin();
+      allow get: if true; // Public can read single prediction via ID to check duplicates
+      
+      // Anyone can create a prediction for an open match
+      allow create: if isValidId(predictionId) && 
+                      isValidPrediction(request.resource.data) && 
+                      request.resource.data.id == predictionId &&
+                      get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.status == 'open';
+                      
+      // Predictions are immutable. Only Admins can delete or update if needed.
+      allow update, delete: if isAdmin() && isValidId(predictionId);
+    }
+  }
+}
