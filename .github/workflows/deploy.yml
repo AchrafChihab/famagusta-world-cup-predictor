@@ -45,6 +45,6 @@ jobs:
             sftp://node182-eu.n0c.com:5022 <<EOF
           set sftp:auto-confirm yes
           set net:max-retries 3
-          mirror --reverse --delete --verbose ./dist/ /public_html/famagusta/
+          mirror --reverse --delete --verbose ./dist/ /famagusta/
           bye
           EOF
