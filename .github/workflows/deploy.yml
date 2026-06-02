@@ -37,15 +37,14 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
 
-      # 5. Deploy via SFTP vers PlanetHoster
-      - name: Deploy via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          server: node182-eu.n0c.com
-          port: 5022
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          local_path: ./dist/*
-          remote_path: /famagusta/
-          sftp_only: true
-          delete_remote_files: true # Nettoie les anciens fichiers avant deploy
+      # 5. Deploy via lftp vers PlanetHoster
+      - name: Deploy via lftp
+        run: |
+          sudo apt-get install -y lftp
+          lftp -u "${{ secrets.SFTP_USERNAME }}","${{ secrets.SFTP_PASSWORD }}" \
+            sftp://node182-eu.n0c.com:5022 <<EOF
+          set sftp:auto-confirm yes
+          set net:max-retries 3
+          mirror --reverse --delete --verbose ./dist/ /public_html/famagusta/
+          bye
+          EOF
